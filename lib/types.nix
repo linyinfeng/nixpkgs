@@ -399,16 +399,27 @@ rec {
       name = "listOf";
       description = "list of ${elemType.description}s";
       check = isList;
-      merge = loc: defs:
-        map (x: x.value) (filter (x: x ? value) (concatLists (imap1 (n: def:
-          imap1 (m: def':
-            (mergeDefinitions
-              (loc ++ ["[definition ${toString n}-entry ${toString m}]"])
-              elemType
-              [{ inherit (def) file; value = def'; }]
-            ).optionalValue
-          ) def.value
-        ) defs)));
+      merge =
+        let
+          mergeInDef = loc: n: def: imap1 (m: def':
+            {
+              optionalValue = (mergeDefinitions
+                (loc ++ ["[definition ${toString n}-entry ${toString m}]"])
+                elemType
+                [{ inherit (def) file; value = def'; }]
+              ).optionalValue;
+              remove = def.remove or false;
+            }
+          ) def.value;
+          normalize = loc: defs:
+            map (x: { value = x.optionalValue.value; inherit (x) remove; })
+              (filter (x: x.optionalValue ? value)
+                (concatLists (imap1 (mergeInDef loc) defs)));
+        in
+          loc: defs: lib.foldl
+              (before: x: if x.remove then lib.remove x.value before else before ++ [x.value])
+              []
+              (normalize loc defs);
       emptyValue = { value = []; };
       getSubOptions = prefix: elemType.getSubOptions (prefix ++ ["*"]);
       getSubModules = elemType.getSubModules;

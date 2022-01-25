@@ -18,7 +18,7 @@ evalConfig() {
     local attr=$1
     shift
     local script="import ./default.nix { modules = [ $* ];}"
-    nix-instantiate --timeout 1 -E "$script" -A "$attr" --eval-only --show-trace --read-write-mode
+    nix-instantiate --timeout 1 -E "$script" -A "$attr" --eval-only --show-trace --read-write-mode --strict
 }
 
 reportFailure() {
@@ -330,6 +330,14 @@ checkConfigOutput 'ok' config.freeformItems.foo.bar ./adhoc-freeformType-survive
 # Anonymous submodules don't get nixed by import resolution/deduplication
 # because of an `extendModules` bug, issue 168767.
 checkConfigOutput '^1$' config.sub.specialisation.value ./extendModules-168767-imports.nix
+
+## Check list
+# mkOrder
+checkConfigOutput '^\[ "before1" "before2" "default1" "default2" "after1" "after2" \]$' 'config.result' \
+  ./list/define-list.nix ./list/default-order.nix ./list/after.nix ./list/before.nix
+# mkRemove
+checkConfigOutput '^\[ "before2" "default2" "after1" "after2" \]$' 'config.result' \
+  ./list/define-list.nix ./list/default-order.nix ./list/after.nix ./list/before.nix ./list/remove.nix
 
 cat <<EOF
 ====== module tests ======

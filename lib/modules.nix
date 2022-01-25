@@ -879,9 +879,15 @@ rec {
       strip = def:
         if def.value._type or "" == "order"
         then def // { value = def.value.content; inherit (def.value) priority; }
+        else if def.value._type or "" == "remove"
+        then def // { value = def.value.content; remove = true; inherit (def.value) priority; }
         else def;
       defs' = map strip defs;
-      compare = a: b: (a.priority or 1000) < (b.priority or 1000);
+      compareType = a: b: a ? value && b ? remove;
+      compare = a: b:
+        let pa = a.priority or 1000;
+            pb = b.priority or 1000;
+        in pa < pb || (pa == pb && compareType a b);
     in sort compare defs';
 
   # This calls substSubModules, whose entire purpose is only to ensure that
@@ -930,6 +936,11 @@ rec {
 
   mkBefore = mkOrder 500;
   mkAfter = mkOrder 1500;
+
+  mkRemove = priority: content:
+    { _type = "remove";
+      inherit priority content;
+    };
 
   # The default priority for things that don't have a priority specified.
   defaultPriority = 100;
