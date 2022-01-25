@@ -946,9 +946,15 @@ let
       strip = def:
         if def.value._type or "" == "order"
         then def // { value = def.value.content; inherit (def.value) priority; }
+        else if def.value._type or "" == "remove"
+        then def // { value = def.value.content; remove = true; inherit (def.value) priority; }
         else def;
       defs' = map strip defs;
-      compare = a: b: (a.priority or defaultOrderPriority) < (b.priority or defaultOrderPriority);
+      compareType = a: b: a ? value && b ? remove;
+      compare = a: b:
+        let pa = a.priority or defaultOrderPriority;
+            pb = b.priority or defaultOrderPriority;
+        in pa < pb || (pa == pb && compareType a b);
     in sort compare defs';
 
   # This calls substSubModules, whose entire purpose is only to ensure that
@@ -1035,6 +1041,11 @@ let
   mkBefore = mkOrder 500;
   defaultOrderPriority = 1000;
   mkAfter = mkOrder 1500;
+
+  mkRemove = priority: content:
+    { _type = "remove";
+      inherit priority content;
+    };
 
   # Convenient property used to transfer all definitions and their
   # properties from one option to another. This property is useful for
@@ -1429,6 +1440,7 @@ private //
     mkOptionDefault
     mkOrder
     mkOverride
+    mkRemove
     mkRemovedOptionModule
     mkRenamedOptionModule
     mkRenamedOptionModuleWith

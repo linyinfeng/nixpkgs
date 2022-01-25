@@ -534,16 +534,29 @@ rec {
       description = "list of ${optionDescriptionPhrase (class: class == "noun" || class == "composite") elemType}";
       descriptionClass = "composite";
       check = isList;
-      merge = loc: defs:
-        map (x: x.value) (filter (x: x ? value) (concatLists (imap1 (n: def:
-          imap1 (m: def':
-            (mergeDefinitions
-              (loc ++ ["[definition ${toString n}-entry ${toString m}]"])
-              elemType
-              [{ inherit (def) file; value = def'; }]
-            ).optionalValue
-          ) def.value
-        ) defs)));
+      merge =
+        let
+          mergeInDef = loc: n: def: imap1 (m: def':
+            {
+              optionalValue = (mergeDefinitions
+                (loc ++ ["[definition ${toString n}-entry ${toString m}]"])
+                elemType
+                [{ inherit (def) file; value = def'; }]
+              ).optionalValue;
+              priority = def.priority or lib.modules.defaultOrderPriority;
+              remove = def.remove or false;
+            }
+          ) def.value;
+          normalize = loc: defs:
+            map (x: { value = x.optionalValue.value; inherit (x) priority remove; })
+              (filter (x: x.optionalValue ? value)
+                (concatLists (imap1 (mergeInDef loc) defs)));
+          applyRemove = lib.foldl
+              (before: x: if x.remove then lib.filter (def: !(def.value == x.value && def.priority == x.priority)) before else before ++ [x])
+              [];
+          extractValues = builtins.map (def: def.value);
+        in
+          loc: defs: extractValues (applyRemove (normalize loc defs));
       emptyValue = { value = []; };
       getSubOptions = prefix: elemType.getSubOptions (prefix ++ ["*"]);
       getSubModules = elemType.getSubModules;

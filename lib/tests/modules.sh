@@ -24,7 +24,7 @@ evalConfig() {
     local attr=$1
     shift
     local script="import ./default.nix { modules = [ $* ];}"
-    nix-instantiate --timeout 1 -E "$script" -A "$attr" --eval-only --show-trace --read-write-mode --json
+    nix-instantiate --timeout 1 -E "$script" -A "$attr" --eval-only --show-trace --read-write-mode --json --strict
 }
 
 reportFailure() {
@@ -500,6 +500,14 @@ checkConfigOutput '^34|23$' options.submoduleLine34.declarationPositions.0.line 
 checkConfigOutput '^34|23$' options.submoduleLine34.declarationPositions.1.line ./declaration-positions.nix
 # nested options work
 checkConfigOutput '^30$' options.nested.nestedLine30.declarationPositions.0.line ./declaration-positions.nix
+
+## Check list
+# mkOrder
+checkConfigOutput '^\["before1","before2","default1","default2","after1","after2"\]$' 'config.result' \
+  ./list/define-list.nix ./list/default-order.nix ./list/after.nix ./list/before.nix
+# mkRemove
+checkConfigOutput '^\["before1","before2","default2","after1","after2"\]$' 'config.result' \
+  ./list/define-list.nix ./list/default-order.nix ./list/after.nix ./list/before.nix ./list/remove.nix
 
 cat <<EOF
 ====== module tests ======

@@ -132,7 +132,7 @@ let
       pushDownProperties dischargeProperties filterOverrides
       sortProperties fixupOptionType mkIf mkAssert mkMerge mkOverride
       mkOptionDefault mkDefault mkImageMediaOverride mkForce mkVMOverride
-      mkFixStrictness mkOrder mkBefore mkAfter mkAliasDefinitions
+      mkFixStrictness mkOrder mkBefore mkAfter mkRemove mkAliasDefinitions
       mkAliasAndWrapDefinitions fixMergeModules mkRemovedOptionModule
       mkRenamedOptionModule mkRenamedOptionModuleWith
       mkMergedOptionModule mkChangedOptionModule
