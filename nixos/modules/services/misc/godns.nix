@@ -31,6 +31,54 @@ let
         };
         description = "Settings used by GoDNS.";
       };
+      environmentFile = mkOption {
+        type = with types; nullOr path;
+        example = "/path/to/godns_secrets";
+        default = null;
+        description = ''
+          EnvironmentFile as defined in <citerefentry><refentrytitle>systemd.exec</refentrytitle>
+          <manvolnum>5</manvolnum></citerefentry>.
+          Can be used to pass screts to the systemd service without adding them to the nix store.
+
+          Environment variables in settings will be substitued.
+
+          <programlisting>
+            # snippet of godns instance config
+            services.godns.instances.example = {
+              environmentFile = "/path/to/godns_secrets";
+              settings.login_token = "$LOGIN_TOKEN";
+            };
+          </programlisting>
+
+          <programlisting>
+            # content of the environment file /path/to/godns_secrets
+            LOGIN_TOKEN=verysecretpassword
+          </programlisting>
+        '';
+      };
+      loadCredential = mkOption {
+        type = with types; listOf str;
+        default = [ ];
+        example = [ "login_token_file:/path/to/my_secret_login_token" ];
+        description = ''
+          LoadCredential as defined in <citerefentry><refentrytitle>systemd.exec</refentrytitle>
+          <manvolnum>5</manvolnum></citerefentry>.
+          Can be used to pass secrets to the systemd service without adding them to the nix store.
+
+          Environment variables in settings will be substitued. So $CREDENTIALS_DIRECTORY can be
+          used in settings.
+
+          <programlisting>
+            # snippet of godns instance config
+            services.godns.instances.example = {
+              loadCredential = [
+                "login_token_file:/path/to/my_secret_login_token"
+              ];
+              settings.login_token_file = "$CREDENTIALS_DIRECTORY/login_token_file";
+            };
+          </programlisting>
+        '';
+      };
     };
   };
 
@@ -41,10 +89,22 @@ let
       after = [ "network.target" ];
       wantedBy = [ "multi-user.target" ];
 
+      script = ''
+        config_file="$RUNTIME_DIRECTORY/config.json"
+        touch "$config_file"
+        chmod 600 "$config_file"
+        ${pkgs.envsubst}/bin/envsubst \
+          -i ${settingsFile instanceCfg} \
+          -o "$config_file"
+        ${cfg.package}/bin/godns -c "$config_file"
+      '';
+
       serviceConfig = {
-        User = cfg.user;
-        Group = cfg.group;
-        ExecStart = "${cfg.package}/bin/godns -c ${settingsFile instanceCfg}";
+        DynamicUser = true;
+        RuntimeDirectory = "godns-${name}";
+        RuntimeDirectoryMode = 700;
+        LoadCredential = instanceCfg.loadCredential;
+        EnvironmentFile = mkIf (instanceCfg.environmentFile != null) instanceCfg.environmentFile;
         Restart = "on-failure";
       };
     };
@@ -65,45 +125,10 @@ in
         default = { };
         description = "GoDNS instances";
       };
-
-      user = mkOption {
-        type = types.str;
-        default = "godns";
-        description = "User under which godns runs.";
-      };
-
-      group = mkOption {
-        type = types.str;
-        default = "godns";
-        description = "Group under which godns runs.";
-      };
-
-      dataDir = mkOption {
-        type = types.path;
-        default = "/var/lib/godns";
-        description = "GoDNS data directory.";
-      };
     };
   };
 
   config = mkIf (cfg.instances != { }) {
-    systemd.tmpfiles.rules = [
-      "d '${cfg.dataDir}' 0700 ${cfg.user} ${cfg.group} - -"
-    ];
-
     systemd.services = mapAttrs' mkService cfg.instances;
-
-    users.users = mkIf (cfg.user == "godns") {
-      godns = {
-        description = "GoDNS service user";
-        group = cfg.group;
-        home = cfg.dataDir;
-        isSystemUser = true;
-      };
-    };
-
-    users.groups = mkIf (cfg.group == "godns") {
-      godns = { };
-    };
   };
 }
