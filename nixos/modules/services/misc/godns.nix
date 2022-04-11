@@ -5,28 +5,17 @@ with lib;
 let
   cfg = config.services.godns;
 
-  settingsFormat = pkgs.formats.json {};
-  settingsFile = settingsFormat.generate "godns.json" ({
+  settingsFormat = pkgs.formats.json { };
+  settingsFile = instanceCfg: settingsFormat.generate "godns.json" ({
     ip_url = "https://ip4.seeip.org";
     ipv6_url = "https://ip6.seeip.org";
     ip_type = "IPv4";
     interval = 300;
     resolver = "8.8.8.8";
-  } // cfg.settings);
+  } // instanceCfg.settings);
 
-in
-{
-  options = {
-    services.godns = {
-      enable = mkEnableOption "GoDNS";
-
-      package = mkOption {
-        type = types.package;
-        default = pkgs.godns;
-        defaultText = literalExpression "pkgs.godns";
-        description = "GoDNS package to use";
-      };
-
+  instanceOpt = {
+    options = {
       settings = mkOption {
         type = types.submodule {
           freeformType = settingsFormat.type;
@@ -37,10 +26,44 @@ in
           login_token = "";
           domains = [{
             domain_name = "example.com";
-            sub_domains = ["www"];
+            sub_domains = [ "www" ];
           }];
         };
         description = "Settings used by GoDNS.";
+      };
+    };
+  };
+
+  mkService = name: instanceCfg: nameValuePair
+    "godns-${name}"
+    {
+      description = "GoDNS instance ${name}";
+      after = [ "network.target" ];
+      wantedBy = [ "multi-user.target" ];
+
+      serviceConfig = {
+        User = cfg.user;
+        Group = cfg.group;
+        ExecStart = "${cfg.package}/bin/godns -c ${settingsFile instanceCfg}";
+        Restart = "on-failure";
+      };
+    };
+
+in
+{
+  options = {
+    services.godns = {
+      package = mkOption {
+        type = types.package;
+        default = pkgs.godns;
+        defaultText = literalExpression "pkgs.godns";
+        description = "GoDNS package to use";
+      };
+
+      instances = mkOption {
+        type = with types; attrsOf (submodule instanceOpt);
+        default = { };
+        description = "GoDNS instances";
       };
 
       user = mkOption {
@@ -63,23 +86,12 @@ in
     };
   };
 
-  config = mkIf cfg.enable {
+  config = mkIf (cfg.instances != { }) {
     systemd.tmpfiles.rules = [
       "d '${cfg.dataDir}' 0700 ${cfg.user} ${cfg.group} - -"
     ];
 
-    systemd.services.godns = {
-      description = "GoDNS";
-      after = [ "network.target" ];
-      wantedBy = [ "multi-user.target" ];
-
-      serviceConfig = {
-        User = cfg.user;
-        Group = cfg.group;
-        ExecStart = "${cfg.package}/bin/godns -c ${settingsFile}";
-        Restart = "on-failure";
-      };
-    };
+    systemd.services = mapAttrs' mkService cfg.instances;
 
     users.users = mkIf (cfg.user == "godns") {
       godns = {
@@ -91,7 +103,7 @@ in
     };
 
     users.groups = mkIf (cfg.group == "godns") {
-      godns = {};
+      godns = { };
     };
   };
 }

@@ -8,9 +8,37 @@ with lib;
 
   nodes.machine =
     { pkgs, ... }:
-    { services.godns.enable = true; };
+    {
+      services.godns.instances.instance1 = {
+        settings = {
+          provider = "Cloudflare";
+          login_token = "API Token";
+          domains = [
+            {
+              domain_name = "example.com";
+              sub_domains = [ "www" "test" ];
+            }
+          ];
+          ip_type = "IPv4";
+        };
+      };
+      services.godns.instances.instance2 = {
+        settings = {
+          provider = "Cloudflare";
+          login_token = "API Token";
+          domains = [
+            {
+              domain_name = "example.com";
+              sub_domains = [ "www" "test" ];
+            }
+          ];
+          ip_type = "IPv6";
+        };
+      };
+    };
 
   testScript = ''
-    machine.wait_for_unit("godns.service")
+    machine.wait_for_unit("godns-instance1.service")
+    machine.wait_for_unit("godns-instance2.service")
   '';
 })
