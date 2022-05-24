@@ -508,6 +508,9 @@ checkConfigOutput '^\["before1","before2","default1","default2","after1","after2
 # mkRemove
 checkConfigOutput '^\["before1","before2","default2","after1","after2"\]$' 'config.result' \
   ./list/define-list.nix ./list/default-order.nix ./list/after.nix ./list/before.nix ./list/remove.nix
+# mkRemove with no mkOrder
+checkConfigOutput '^\["default2"\]$' 'config.result' \
+  ./list/define-list.nix ./list/default-order.nix ./list/remove.nix
 
 cat <<EOF
 ====== module tests ======

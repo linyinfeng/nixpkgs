@@ -831,7 +831,7 @@ let
         # Sort mkOrder properties.
         defs''' =
           # Avoid sorting if we don't have to.
-          if any (def: def.value._type or "" == "order") defs''.values
+          if any (def: let _type = def.value._type or ""; in _type == "order" || _type == "remove") defs''.values
           then sortProperties defs''.values
           else defs''.values;
       in {
