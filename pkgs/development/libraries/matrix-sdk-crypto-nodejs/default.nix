@@ -2,25 +2,21 @@
 
 stdenv.mkDerivation rec {
   pname = "matrix-sdk-crypto-nodejs";
-  version = "0.1.0-beta.3";
+  version = "0.1.0-beta.4";
 
   src = fetchFromGitHub {
     owner = "matrix-org";
     repo = "matrix-rust-sdk";
     rev = "${pname}-v${version}";
-    hash = "sha256-0p+1cMn9PU+Jk2JW7G+sdzxhMaI3gEAk5w2nm05oBSU=";
+    hash = "sha256-Ei1xEdCCwWEFw6jg8VlGlmEB6G3PWTOCRi+sAUSFeg4=";
   };
-
-  patches = [
-    # This is needed because two versions of indexed_db_futures are present (which will fail to vendor, see https://github.com/rust-lang/cargo/issues/10310).
-    # (matrix-sdk-crypto-nodejs doesn't use this dependency, we only need to remove it to vendor the dependencies successfully.)
-    ./remove-duplicate-dependency.patch
-  ];
 
   cargoDeps = rustPlatform.importCargoLock {
     lockFile = ./Cargo.lock;
     outputHashes = {
-      "uniffi-0.21.0" = "sha256-blKCfCsSNtr8NtO7Let7VJ/9oGuW9Eu8j9A6/oHUcP0=";
+      "ruma-0.8.2" = "sha256-tgqUqiN6LNUyz5I6797J0YFsiFyYWfexa7n2jwUoHWA=";
+      "uniffi-0.23.0" = "sha256-U2E6ID2ATij3Lh9vJBfvSVgJ0+Gobr4E+wpNuM6CNL8=";
+      "vodozemac-0.3.0" = "sha256-tAimsVD8SZmlVybb7HvRffwlNsfb7gLWGCplmwbLIVE=";
     };
   };
 
