@@ -417,7 +417,7 @@ in {
         located, the first certificate is used.
       '';
 
-      cert = mkPostfixedAttrsOfParams certParams ''
+      cert = mkPrefixedAttrsOfParams certParams ''
         Section for a certificate candidate to use for
         authentication. Certificates in certs are transmitted as binary blobs,
         these sections offer more flexibility.
@@ -549,7 +549,7 @@ in {
         or an absolute path.
       '';
 
-      cert = mkPostfixedAttrsOfParams certParams ''
+      cert = mkPrefixedAttrsOfParams certParams ''
         Section for a certificate candidate to use for
         authentication. Certificates in certs are transmitted as binary blobs,
         these sections offer more flexibility.
@@ -571,7 +571,7 @@ in {
         swanctl `x509ca` directory or an absolute path.
       '';
 
-      cacert = mkPostfixedAttrsOfParams certParams ''
+      cacert = mkPrefixedAttrsOfParams certParams ''
         Section for a CA certificate to accept for authentication. Certificates
         in cacerts are transmitted as binary blobs, these sections offer more
         flexibility.
