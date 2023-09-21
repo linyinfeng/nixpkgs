@@ -3,7 +3,7 @@
 { lib, stdenv, buildPackages, fetchurl, perl, xz, libintl, bash
 , gnulib, gawk
 
-# we are a dependency of gcc, this simplifies bootstraping
+# we are a dependency of gcc, this simplifies bootstrapping
 , interactive ? false, ncurses, procps
 }:
 

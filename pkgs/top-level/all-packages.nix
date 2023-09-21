@@ -18862,7 +18862,7 @@ with pkgs;
   # host platform.
   #
   # Because this is the *next* stages choice, it's a bit non-modular to put
-  # here. In theory, bootstraping is supposed to not be a chain but at tree,
+  # here. In theory, bootstrapping is supposed to not be a chain but at tree,
   # where each stage supports many "successor" stages, like multiple possible
   # futures. We don't have a better alternative, but with this downside in
   # mind, please be judicious when using this attribute. E.g. for building
