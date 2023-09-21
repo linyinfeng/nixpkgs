@@ -28,7 +28,7 @@
 { lib, allPackages }:
 
 # Type:
-#   [ pkgset -> (args to stage/default.nix) or ({ __raw = true; } // pkgs) ]
+#   [ pkgset -> (args to pkgs/top-level/stage.nix) or ({ __raw = true; } // pkgs) ]
 #   -> pkgset
 #
 # In english: This takes a list of function from the previous stage pkgset and
