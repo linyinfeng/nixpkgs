@@ -115,7 +115,7 @@ let
       inherit (self.pkgsBuildHost.xorg) lndir;
     };
 
-  stdenvBootstappingAndPlatforms = self: super: let
+  stdenvBootstrappingAndPlatforms = self: super: let
     withFallback = thisPkgs:
       (if adjacentPackages == null then self else thisPkgs)
       // { recurseForDerivations = false; };
@@ -282,7 +282,7 @@ let
   # stdenvOverlays must be last as it brings package forward from the
   # previous bootstrapping phases which have already been overlayed.
   toFix = lib.foldl' (lib.flip lib.extends) (self: {}) ([
-    stdenvBootstappingAndPlatforms
+    stdenvBootstrappingAndPlatforms
     stdenvAdapters
     trivialBuilders
     splice
