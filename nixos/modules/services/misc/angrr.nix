@@ -7,6 +7,7 @@
 
 let
   cfg = config.services.angrr;
+  direnvCfg = config.programs.direnv.angrr;
 in
 {
   meta.maintainers = pkgs.angrr.meta.maintainers;
@@ -77,6 +78,23 @@ in
         };
       };
     };
+    programs.direnv.angrr = {
+      enable = lib.mkEnableOption "angrr direnv integration" // {
+        default = cfg.enable;
+        defaultText = lib.literalExpression ''
+          config.services.angrr.enable
+        '';
+        example = false;
+      };
+      autoUse = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+        example = false;
+        description = ''
+          Whether to automatically use angrr before loading .envrc.
+        '';
+      };
+    };
   };
 
   config = lib.mkIf cfg.enable (
@@ -106,6 +124,8 @@ in
             Type = "oneshot";
           };
         };
+
+        environment.systemPackages = [ cfg.package ];
       }
 
       (lib.mkIf cfg.timer.enable {
@@ -122,6 +142,13 @@ in
           wantedBy = [ "nix-gc.service" ];
           before = [ "nix-gc.service" ];
         };
+      })
+
+      (lib.mkIf direnvCfg.enable {
+        environment.etc."direnv/lib/angrr.sh".source = "${cfg.package}/share/direnv/lib/angrr.sh";
+        programs.direnv.direnvrcExtra = lib.mkIf direnvCfg.autoUse ''
+          use angrr
+        '';
       })
     ]
   );
